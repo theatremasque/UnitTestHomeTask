@@ -6,9 +6,9 @@ public class GoogleMessageProvider : IGoogleMessageProvider
     
     private readonly HttpClient _client;
 
-    public GoogleMessageProvider(HttpClient client)
+    public GoogleMessageProvider()
     {
-        _client = client;
+        _client = new HttpClient();
     }
 
     public Task<HttpResponseMessage> SendAsync()

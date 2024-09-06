@@ -1,4 +1,6 @@
 ﻿using System.Net;
+using System.Net.Http.Headers;
+using Moq;
 
 namespace UnitTestHometask;
 
@@ -9,20 +11,35 @@ public class MyHttpMessageSenderTest
     [SetUp]
     public void Initialize()
     {
-        // very bad code))) but it test, and it`s okay to hard it))
-        _sender = new MyHttpMessageSender(new GoogleMessageProvider(new HttpClient()));
+        var mockProvider = new Mock<IGoogleMessageProvider>();
+
+        mockProvider.Setup(s => s.SendAsync())
+            .ReturnsAsync(new HttpResponseMessage()
+            {
+                Content = new MultipartContent()
+                {
+                    Headers =
+                    {
+                        ContentType = new MediaTypeHeaderValue("text/html")
+                    }
+                }
+            });
+        
+        _sender = new MyHttpMessageSender(mockProvider.Object);
     }
 
     [TestCase(TestName = "Contains Content-Type header")]
     public async Task CallAsyncTest_ContentType_ReturnHeader()
     {
         // Arrange
-        var exceptedContentTypeHeaders = new (string Key, IEnumerable<string> Value)[] { ("Content-Type", new [] { "text/html; charset=ISO-8859-1" }) };
+        var exceptedContentTypeHeaders = new (string Key, IEnumerable<string> Value)[] 
+            { ("Content-Type", new [] { "text/html" }) };
 
         // Act
         var actualContentTypeHeaders  = await _sender.CallAsync();
 
-        var filteredContentTypeHeaders = actualContentTypeHeaders.Where(c => c.Key.Equals("Content-Type"));
+        var filteredContentTypeHeaders = actualContentTypeHeaders
+            .Where(c => c.Key.Equals("Content-Type"));
         
         // Assert
         Assert.That(filteredContentTypeHeaders, Is.EqualTo(exceptedContentTypeHeaders));
